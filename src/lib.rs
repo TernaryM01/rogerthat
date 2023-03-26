@@ -39,6 +39,16 @@ impl Wordle {
 }
 
 impl Correctness {
+    fn is_misplaced(letter: char, answer: &str, used: &mut [bool; 5]) -> bool {
+        answer.chars().enumerate().any(|(i, a)| {
+            if a == letter && !used[i] {
+                used[i] = true;
+                return true;
+            }
+            false
+        })
+    }
+
     fn compute(answer: &str, guess: &str) -> [Self; 5] {
         assert_eq!(answer.len(), 5);
         assert_eq!(guess.len(), 5);
@@ -47,31 +57,21 @@ impl Correctness {
         let mut c = [Correctness::Wrong; 5];
 
         //Mark things green
+        let mut used = [false; 5];
         for (i, (a, g)) in answer.chars().zip(guess.chars()).enumerate() {
             if a == g {
                 c[i] = Correctness::Correct;
+                used[i] = true;
             }
         }
 
         //Mark things yellow
-        let mut used = [false; 5];
-        for (i, &c) in c.iter().enumerate() {
-            if c == Correctness::Correct {
-                used[i] = true;
-            }
-        }
         for (i, g) in guess.chars().enumerate() {
             if c[i] == Correctness::Correct {
                 // Already marked as green
                 continue;
             }
-            if answer.chars().enumerate().any(|(i, a)| {
-                if a == g && !used[i] {
-                    used[i] = true;
-                    return true;
-                }
-                false
-            }) {
+            if Self::is_misplaced(g, answer, &mut used) {
                 c[i] = Correctness::Misplaced;
             }
         }
@@ -91,8 +91,44 @@ pub enum Correctness {
 }
 
 pub struct Guess {
-    word: String,
-    mask: [Correctness; 5],
+    pub word: String,
+    pub mask: [Correctness; 5],
+}
+
+impl Guess {
+    pub fn matches(&self, other_word: &str) -> bool {
+        assert_eq!(self.word.len(), 5);
+        assert_eq!(other_word.len(), 5);
+
+        let mut used = [false; 5];
+        for (i, ((g, &mask), o)) in self
+            .word
+            .chars()
+            .zip(&self.mask)
+            .zip(other_word.chars())
+            .enumerate()
+        {
+            match mask {
+                Correctness::Correct => {
+                    if g != o {
+                        return false;
+                    }
+                    used[i] = true;
+                }
+                Correctness::Misplaced => {
+                    if g == o {
+                        return false;
+                    }
+                }
+                Correctness::Wrong => {
+                    if g == o {
+                        return false;
+                    }
+                }
+            }
+        }
+        todo!()
+    }
 }
 
 pub trait Guesser {
