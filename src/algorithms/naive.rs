@@ -30,8 +30,8 @@ impl Guesser for Naive {
         if let Some(last) = history.last() {
             self.remaining
                 .retain(|word, _| /*last.matches(word)*/ last.matches(word));
-        }
-        if history.is_empty() {
+        } else {
+            // First guess
             return "tares".to_string();
         }
 
@@ -64,14 +64,11 @@ impl Guesser for Naive {
             if let Some(c) = best {
                 // Is this one better?
                 if goodness > c.goodness {
-                    println!(
-                        "{} is better than {} ({} > {})",
-                        word, c.word, goodness, c.goodness
-                    );
+                    // println!("{} is better than {} ({} > {})", word, c.word, goodness, c.goodness);
                     best = Some(Candidate { word, goodness })
                 }
             } else {
-                println!("starting with {} (goodness: {})", word, goodness);
+                // println!("starting with {} (goodness: {})", word, goodness);
                 best = Some(Candidate { word, goodness });
             }
         }

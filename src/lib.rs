@@ -23,12 +23,20 @@ impl Wordle {
         let mut history = Vec::new();
         for i in 1..=100 {
             let guess = guesser.guess(&history[..]);
+            // println!("Guessing {}", guess);
             if guess == answer {
+                println!("Guessed {}, which is the answer.", guess);
                 return Some(i);
             }
 
             assert!(self.dictionary.contains(&*guess));
             let correctness = Correctness::compute(answer, &guess);
+            // println!("{}", Correctness::to_string(correctness));
+            println!(
+                "Guessed {}, received pattern {}.",
+                guess,
+                Correctness::to_string(correctness)
+            );
             history.push(Guess {
                 word: guess,
                 mask: correctness,
@@ -77,6 +85,18 @@ impl Correctness {
         }
 
         mask
+    }
+
+    fn to_string(pattern: [Self; 5]) -> String {
+        let mut res = String::with_capacity(5);
+        for m in pattern {
+            match m {
+                Correctness::Correct => res.push('C'),
+                Correctness::Misplaced => res.push('M'),
+                Correctness::Wrong => res.push('W'),
+            };
+        }
+        res
     }
 
     // generate all correctness patterns
