@@ -55,8 +55,8 @@ fn play<G: Guesser>(
         .take(num_rounds.unwrap_or(usize::MAX))
     {
         let guesser = (mk)();
-        let answer_b: rogerthat::Word = (*answer.clone()).as_bytes().try_into().expect("");
-        if let Some(score) = w.play(&answer_b, guesser) {
+        let answer_b: rogerthat::Word = answer.as_bytes().try_into().expect("");
+        if let Some(score) = w.play(answer_b, guesser) {
             println!("The answer is {}, took {} tries.", answer, score);
         } else {
             eprintln!("failed to guess");

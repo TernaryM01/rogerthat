@@ -24,12 +24,12 @@ impl Wordle {
         }
     }
 
-    pub fn play<G: Guesser>(&self, answer: &Word, mut guesser: G) -> Option<usize> {
+    pub fn play<G: Guesser>(&self, answer: Word, mut guesser: G) -> Option<usize> {
         let mut history = Vec::new();
         for i in 1..=100 {
             let guess = guesser.guess(&history);
             // println!("Guessing {}", guess);
-            if guess == *answer {
+            if guess == answer {
                 println!(
                     "Guessed {}, which is the answer.",
                     std::str::from_utf8(&guess).unwrap()
@@ -38,7 +38,7 @@ impl Wordle {
             }
 
             assert!(self.dictionary.contains(&guess));
-            let correctness = Correctness::compute(answer, &guess);
+            let correctness = Correctness::compute(&answer, &guess);
             // println!("{}", Correctness::to_string(correctness));
             println!(
                 "Guessed {:?}, received pattern {}.",
@@ -216,7 +216,7 @@ mod tests {
         fn genius() {
             let w = Wordle::new();
             let guesser = guesser!(|_history| { *b"right" });
-            assert_eq!(w.play(b"right", guesser), Some(1));
+            assert_eq!(w.play(*b"right", guesser), Some(1));
         }
         #[test]
         fn magnificent() {
@@ -227,7 +227,7 @@ mod tests {
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(b"right", guesser), Some(2));
+            assert_eq!(w.play(*b"right", guesser), Some(2));
         }
         #[test]
         fn impressive() {
@@ -238,7 +238,7 @@ mod tests {
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(b"right", guesser), Some(3));
+            assert_eq!(w.play(*b"right", guesser), Some(3));
         }
         #[test]
         fn splendid() {
@@ -249,7 +249,7 @@ mod tests {
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(b"right", guesser), Some(4));
+            assert_eq!(w.play(*b"right", guesser), Some(4));
         }
         #[test]
         fn great() {
@@ -260,7 +260,7 @@ mod tests {
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(b"right", guesser), Some(5));
+            assert_eq!(w.play(*b"right", guesser), Some(5));
         }
         #[test]
         fn phew() {
@@ -271,13 +271,13 @@ mod tests {
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(b"right", guesser), Some(6));
+            assert_eq!(w.play(*b"right", guesser), Some(6));
         }
         #[test]
         fn oops() {
             let w = Wordle::new();
             let guesser = guesser!(|_history| { *b"wrong" });
-            assert_eq!(w.play(b"right", guesser), None);
+            assert_eq!(w.play(*b"right", guesser), None);
         }
     }
 
