@@ -1,9 +1,9 @@
-use crate::{Correctness, Guess, Guesser, DICTIONARY};
+use crate::{Correctness, Guess, Guesser, Word, DICTIONARY};
 use std::{borrow::Cow, collections::HashMap};
 
 pub struct Naive {
-    initial: HashMap<&'static str, usize>,
-    remaining: HashMap<&'static str, usize>,
+    initial: HashMap<Word, usize>,
+    remaining: HashMap<Word, usize>,
 }
 
 impl Naive {
@@ -13,6 +13,10 @@ impl Naive {
                 let (word, count) = line
                     .split_once(' ')
                     .expect("Every line must be of the format: word + space + frequency");
+                let word: Word = word
+                    .as_bytes()
+                    .try_into()
+                    .expect("Every word should consist of 5 characters");
                 let count: usize = count.parse().expect("Every count should be a number");
                 (word, count)
             })),
@@ -25,12 +29,12 @@ impl Naive {
 
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
-    word: &'static str,
+    word: Word,
     goodness: f64,
 }
 
 impl Guesser for Naive {
-    fn guess(&mut self, history: &[Guess]) -> String {
+    fn guess(&mut self, history: &[Guess]) -> Word {
         if let Some(last) = history.last() {
             self.remaining.retain(|word, _| last.matches(word));
             let num_remains = self.remaining.len();
@@ -39,11 +43,11 @@ impl Guesser for Naive {
             // This is essential, because otherwise,
             // any guess would be considered to be as good as any other.
             if num_remains == 1 {
-                return self.remaining.iter().next().unwrap().0.to_string();
+                return *self.remaining.iter().next().unwrap().0;
             }
         } else {
             // First guess
-            return "tares".to_string();
+            return *b"tares";
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
@@ -57,7 +61,7 @@ impl Guesser for Naive {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &self.remaining {
                     let g = Guess {
-                        word: Cow::Borrowed(word),
+                        word: Cow::Borrowed(&word),
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -77,9 +81,9 @@ impl Guesser for Naive {
                     // println!("{} is better than {} ({} > {})", word, c.word, goodness, c.goodness);
                     best = Some(Candidate { word, goodness })
                 } else if goodness == c.goodness {
-                    if !self.remaining.contains_key(c.word) {
+                    if !self.remaining.contains_key(&c.word) {
                         best = Some(Candidate { word, goodness });
-                    } else if self.initial.get(word) > self.initial.get(c.word) {
+                    } else if self.initial.get(&word) > self.initial.get(&c.word) {
                         best = Some(Candidate { word, goodness });
                     }
                 }
@@ -88,6 +92,6 @@ impl Guesser for Naive {
                 best = Some(Candidate { word, goodness });
             }
         }
-        best.unwrap().word.to_string()
+        best.unwrap().word
     }
 }
