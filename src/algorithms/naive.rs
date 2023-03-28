@@ -1,5 +1,5 @@
 use crate::{Correctness, Guess, Guesser, Word, DICTIONARY};
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 pub struct Naive {
     initial: HashMap<Word, usize>,
@@ -61,7 +61,7 @@ impl Guesser for Naive {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &self.remaining {
                     let g = Guess {
-                        word: Cow::Borrowed(&word),
+                        word: word,
                         mask: pattern,
                     };
                     if g.matches(candidate) {

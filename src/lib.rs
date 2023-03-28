@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashSet};
+use std::collections::HashSet;
 
 pub mod algorithms;
 
@@ -38,7 +38,7 @@ impl Wordle {
             }
 
             assert!(self.dictionary.contains(&guess));
-            let correctness = Correctness::compute(&answer, &guess);
+            let correctness = Correctness::compute(answer, guess);
             // println!("{}", Correctness::to_string(correctness));
             println!(
                 "Guessed {:?}, received pattern {}.",
@@ -46,7 +46,7 @@ impl Wordle {
                 Correctness::to_string(correctness)
             );
             history.push(Guess {
-                word: Cow::Owned(guess),
+                word: guess,
                 mask: correctness,
             });
         }
@@ -65,7 +65,7 @@ impl Correctness {
         })
     }
 
-    fn compute(answer: &Word, guess: &Word) -> [Self; 5] {
+    fn compute(answer: Word, guess: Word) -> [Self; 5] {
         assert_eq!(answer.len(), 5);
         assert_eq!(guess.len(), 5);
 
@@ -130,12 +130,12 @@ pub enum Correctness {
     Wrong,
 }
 
-pub struct Guess<'a> {
-    pub word: Cow<'a, Word>,
+pub struct Guess {
+    pub word: Word,
     pub mask: [Correctness; 5],
 }
 
-impl Guess<'_> {
+impl Guess {
     pub fn matches(&self, other_word: &Word) -> bool {
         // // This one also works, but slower because it lacks short-circuiting:
         // return Correctness::compute(other_word, &self.word) == self.mask;
@@ -286,63 +286,62 @@ mod tests {
 
         #[test]
         fn all_green() {
-            assert_eq!(Correctness::compute(b"abcde", b"abcde"), mask!(C C C C C));
+            assert_eq!(Correctness::compute(*b"abcde", *b"abcde"), mask!(C C C C C));
         }
         #[test]
         fn all_gray() {
-            assert_eq!(Correctness::compute(b"abcde", b"fghij"), mask!(W W W W W));
+            assert_eq!(Correctness::compute(*b"abcde", *b"fghij"), mask!(W W W W W));
         }
         #[test]
         fn all_yellow() {
-            assert_eq!(Correctness::compute(b"abcde", b"eabcd"), mask!(M M M M M));
+            assert_eq!(Correctness::compute(*b"abcde", *b"eabcd"), mask!(M M M M M));
         }
         #[test]
         fn repeat_green() {
-            assert_eq!(Correctness::compute(b"aabbb", b"aaccc"), mask!(C C W W W));
+            assert_eq!(Correctness::compute(*b"aabbb", *b"aaccc"), mask!(C C W W W));
         }
         #[test]
         fn repeat_yellow() {
-            assert_eq!(Correctness::compute(b"aabbb", b"ccaac"), mask!(W W M M W));
+            assert_eq!(Correctness::compute(*b"aabbb", *b"ccaac"), mask!(W W M M W));
         }
         #[test]
         fn repeat_some_green() {
-            assert_eq!(Correctness::compute(b"aabbb", b"caacc"), mask!(W C M W W));
+            assert_eq!(Correctness::compute(*b"aabbb", *b"caacc"), mask!(W C M W W));
         }
         #[test]
         fn decent_chat() {
-            assert_eq!(Correctness::compute(b"azzaz", b"aaabb"), mask!(C M W W W));
+            assert_eq!(Correctness::compute(*b"azzaz", *b"aaabb"), mask!(C M W W W));
         }
         #[test]
         fn dumb_chat() {
-            assert_eq!(Correctness::compute(b"abcde", b"aacde"), mask!(C W C C C));
+            assert_eq!(Correctness::compute(*b"abcde", *b"aacde"), mask!(C W C C C));
         }
         #[test]
         fn ambiguous() {
-            assert_eq!(Correctness::compute(b"ccaca", b"aabba"), mask!(M W W W C));
+            assert_eq!(Correctness::compute(*b"ccaca", *b"aabba"), mask!(M W W W C));
             // The following mask should really match as well.
-            assert_ne!(Correctness::compute(b"ccaca", b"aabba"), mask!(W M W W C));
+            assert_ne!(Correctness::compute(*b"ccaca", *b"aabba"), mask!(W M W W C));
         }
     }
     mod guess_matcher {
         use crate::Guess;
-        use std::borrow::Cow;
 
         macro_rules! check {
             ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
                 assert!(Guess {
-                    word: Cow::Borrowed($prev),
+                    word: *$prev,
                     mask: mask![$($mask )+]
                 }
                 .matches($next));
-                assert_eq!($crate::Correctness::compute($next, $prev), mask![$($mask )+]);
+                assert_eq!($crate::Correctness::compute(*$next, *$prev), mask![$($mask )+]);
             };
             ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
                 assert!(!Guess {
-                    word: Cow::Borrowed($prev),
+                    word: *$prev,
                     mask: mask![$($mask )+]
                 }
                 .matches($next));
-                assert_ne!($crate::Correctness::compute($next, $prev), mask![$($mask )+]);
+                assert_ne!($crate::Correctness::compute(*$next, *$prev), mask![$($mask )+]);
             }
         }
 

@@ -64,7 +64,7 @@ impl Guesser for Cached {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &*self.remaining {
                     let g = Guess {
-                        word: Cow::Borrowed(&word),
+                        word: word,
                         mask: pattern,
                     };
                     if g.matches(candidate) {
