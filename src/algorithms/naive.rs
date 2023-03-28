@@ -1,21 +1,25 @@
 use crate::{Correctness, Guess, Guesser, DICTIONARY};
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 pub struct Naive {
+    initial: HashMap<&'static str, usize>,
     remaining: HashMap<&'static str, usize>,
 }
 
 impl Naive {
     pub fn new() -> Self {
-        Self {
-            remaining: HashMap::from_iter(DICTIONARY.lines().map(|line| {
+        let mut res = Self {
+            initial: HashMap::from_iter(DICTIONARY.lines().map(|line| {
                 let (word, count) = line
                     .split_once(' ')
                     .expect("Every line must be of the format: word + space + frequency");
                 let count: usize = count.parse().expect("Every count should be a number");
                 (word, count)
             })),
-        }
+            remaining: HashMap::new(),
+        };
+        res.remaining = res.initial.clone();
+        res
     }
 }
 
@@ -28,8 +32,15 @@ struct Candidate {
 impl Guesser for Naive {
     fn guess(&mut self, history: &[Guess]) -> String {
         if let Some(last) = history.last() {
-            self.remaining
-                .retain(|word, _| /*last.matches(word)*/ last.matches(word));
+            self.remaining.retain(|word, _| last.matches(word));
+            let num_remains = self.remaining.len();
+            println!("Number of remaining possibilities: {}", num_remains);
+            // If only 1 possibility remains, return that as the guess.
+            // This is essential, because otherwise,
+            // any guess would be considered to be as good as any other.
+            if num_remains == 1 {
+                return self.remaining.iter().next().unwrap().0.to_string();
+            }
         } else {
             // First guess
             return "tares".to_string();
@@ -38,15 +49,15 @@ impl Guesser for Naive {
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
 
         let mut best: Option<Candidate> = None;
-        for (&word, _) in &self.remaining {
-            // measure goodness
+        for (&word, _) in &self.initial {
+            // measure goodness, which is the expected value of the information
             // - SUM_i p_i * log_2(p_i)
-            let mut sum = 0.0;
+            let mut goodness = 0.0;
             for pattern in Correctness::all_patterns() {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &self.remaining {
                     let g = Guess {
-                        word: word.to_string(),
+                        word: Cow::Borrowed(word),
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -57,15 +68,20 @@ impl Guesser for Naive {
                     continue;
                 }
                 let prob_of_pattern = in_pattern_total as f64 / remaining_count as f64;
-                sum += prob_of_pattern * prob_of_pattern.log2();
+                goodness -= prob_of_pattern * prob_of_pattern.log2();
             }
-            let goodness = -sum;
 
             if let Some(c) = best {
                 // Is this one better?
                 if goodness > c.goodness {
                     // println!("{} is better than {} ({} > {})", word, c.word, goodness, c.goodness);
                     best = Some(Candidate { word, goodness })
+                } else if goodness == c.goodness {
+                    if !self.remaining.contains_key(c.word) {
+                        best = Some(Candidate { word, goodness });
+                    } else if self.initial.get(word) > self.initial.get(c.word) {
+                        best = Some(Candidate { word, goodness });
+                    }
                 }
             } else {
                 // println!("starting with {} (goodness: {})", word, goodness);
