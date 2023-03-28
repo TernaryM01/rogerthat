@@ -17,17 +17,8 @@ struct Cli {
 #[derive(Parser, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Implementation {
     Naive,
+    Cached,
 }
-
-// impl std::str::FromStr for Implementation {
-//     type Err = String;
-//     fn from_str(arg: &str) -> Result<Self, Self::Err> {
-//         match arg {
-//             "naive" => Ok(Self::Naive),
-//             _ => Err(format!("unknown implementation '{}'", arg)),
-//         }
-//     }
-// }
 
 const GAMES: &str = include_str!("../answers.txt");
 
@@ -37,6 +28,11 @@ fn main() {
     match cli.implementation {
         Implementation::Naive => play(
             || rogerthat::algorithms::Naive::new(),
+            cli.num_rounds,
+            cli.skipped_rounds,
+        ),
+        Implementation::Cached => play(
+            || rogerthat::algorithms::Cached::new(),
             cli.num_rounds,
             cli.skipped_rounds,
         ),
