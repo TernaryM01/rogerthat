@@ -50,7 +50,7 @@ impl Guesser for Cached {
             }
         } else {
             // First guess
-            return *b"tares";
+            return *b"crate";
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
@@ -83,12 +83,18 @@ impl Guesser for Cached {
                 if goodness > c.goodness {
                     // println!("{} is better than {} ({} > {})", word, c.word, goodness, c.goodness);
                     best = Some(Candidate { word, goodness })
+
+                // pretty common when there are few words left
                 } else if goodness == c.goodness {
+                    // disfavor a word that has been ruled out
                     if !self.remaining.contains_key(&c.word) {
+                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
                         best = Some(Candidate { word, goodness });
-                    } else if INITIAL.get().unwrap().get(&word)
-                        > INITIAL.get().unwrap().get(&c.word)
+                    // if both words haven't been ruled out, favor the more common one
+                    } else if (self.remaining.contains_key(&word))
+                        && (INITIAL.get().unwrap().get(&word) > INITIAL.get().unwrap().get(&c.word))
                     {
+                        // println!("'{}' has not been ruled out", std::str::from_utf8(&word).unwrap());
                         best = Some(Candidate { word, goodness });
                     }
                 }

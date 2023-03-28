@@ -5,6 +5,7 @@ pub mod algorithms;
 pub type Word = [u8; 5];
 
 const DICTIONARY: &str = include_str!("../dictionary.txt");
+const MAX_GUESSES: usize = 100;
 
 pub struct Wordle {
     dictionary: HashSet<&'static Word>,
@@ -26,7 +27,7 @@ impl Wordle {
 
     pub fn play<G: Guesser>(&self, answer: Word, mut guesser: G) -> Option<usize> {
         let mut history = Vec::new();
-        for i in 1..=100 {
+        for i in 1..=MAX_GUESSES {
             let guess = guesser.guess(&history);
             // println!("Guessing {}", guess);
             if guess == answer {
@@ -41,7 +42,7 @@ impl Wordle {
             let correctness = Correctness::compute(answer, guess);
             // println!("{}", Correctness::to_string(correctness));
             println!(
-                "Guessed {:?}, received pattern {}.",
+                "Guessed {}, received pattern {}.",
                 std::str::from_utf8(&guess).unwrap(),
                 Correctness::to_string(correctness)
             );
@@ -56,13 +57,25 @@ impl Wordle {
 
 impl Correctness {
     fn is_misplaced(&letter: &u8, &answer: &Word, used: &mut [bool; 5]) -> bool {
-        answer.iter().zip(used.iter_mut()).any(|(a, u)| {
-            if *a == letter && !*u {
-                *u = true;
+        // // Look at this functional programming obsession from the original programmer.
+        // // What a DISEASE!
+        // answer.iter().zip(used.iter_mut()).any(|(a, u)| {
+        //     if *a == letter && !*u {
+        //         *u = true;
+        //         return true;
+        //     }
+        //     false
+        // })
+
+        // Because all the lengths are carried by the types,
+        // the compiler should be able to eliminate all redundant bounds checks!
+        for i in 0..5 {
+            if (answer[i] == letter) && !used[i] {
+                used[i] = true;
                 return true;
             }
-            false
-        })
+        }
+        false
     }
 
     fn compute(answer: Word, guess: Word) -> [Self; 5] {
@@ -70,24 +83,26 @@ impl Correctness {
         assert_eq!(guess.len(), 5);
 
         // Initialize as all gray
-        let mut mask = [Correctness::Wrong; 5];
+        // // Specifying the type lengths explicitly might be unnecessary.
+        // // This is to make sure that the compiler makes use of them.
+        let mut mask: [Correctness; 5] = [Correctness::Wrong; 5];
+        let mut used: [bool; 5] = [false; 5];
 
         // Mark things green
-        let mut used = [false; 5];
-        for (i, (a, g)) in answer.iter().zip(guess.iter()).enumerate() {
-            if a == g {
+        for i in 0..5 {
+            if answer[i] == guess[i] {
                 mask[i] = Correctness::Correct;
                 used[i] = true;
             }
         }
 
         // Mark things yellow
-        for (i, g) in guess.iter().enumerate() {
+        for i in 0..5 {
             if mask[i] == Correctness::Correct {
                 // Already marked as green
                 continue;
             }
-            if Self::is_misplaced(&g, &answer, &mut used) {
+            if Self::is_misplaced(&guess[i], &answer, &mut used) {
                 mask[i] = Correctness::Misplaced;
             }
         }
@@ -144,9 +159,19 @@ impl Guess {
         assert_eq!(other_word.len(), 5);
 
         // Check green marks
-        let mut used = [false; 5];
-        for (i, (g, o)) in self.word.iter().zip(other_word.iter()).enumerate() {
-            if g == o {
+        let mut used: [bool; 5] = [false; 5];
+        // for (i, (g, o)) in self.word.iter().zip(other_word.iter()).enumerate() {
+        //     if g == o {
+        //         if self.mask[i] != Correctness::Correct {
+        //             return false;
+        //         }
+        //         used[i] = true;
+        //     } else if self.mask[i] == Correctness::Correct {
+        //         return false;
+        //     }
+        // }
+        for i in 0..5 {
+            if self.word[i] == other_word[i] {
                 if self.mask[i] != Correctness::Correct {
                     return false;
                 }
@@ -157,13 +182,24 @@ impl Guess {
         }
 
         // Check yellow marks
-        for (g, m) in self.word.iter().zip(self.mask.iter()) {
-            if *m == Correctness::Correct {
+        // // for (g, m) in self.word.iter().zip(self.mask.iter()) {
+        // //     if *m == Correctness::Correct {
+        // //         // Already checked for green mark
+        // //         continue;
+        // //     }
+        // //     if Correctness::is_misplaced(&g, &other_word, &mut used)
+        // //         != (*m == Correctness::Misplaced)
+        // //     {
+        // //         return false;
+        // //     }
+        // // }
+        for i in 0..5 {
+            if self.mask[i] == Correctness::Correct {
                 // Already checked for green mark
                 continue;
             }
-            if Correctness::is_misplaced(&g, &other_word, &mut used)
-                != (*m == Correctness::Misplaced)
+            if Correctness::is_misplaced(&self.word[i], &other_word, &mut used)
+                != (self.mask[i] == Correctness::Misplaced)
             {
                 return false;
             }
