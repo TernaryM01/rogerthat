@@ -56,7 +56,7 @@ impl Guesser for Cached {
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
 
         let mut best: Option<Candidate> = None;
-        for (&word, _) in &*self.remaining {
+        for (&word, _) in INITIAL.get().unwrap() {
             // measure goodness, which is the expected value of the information
             // - SUM_i p_i * log_2(p_i)
             let mut goodness = 0.0;
