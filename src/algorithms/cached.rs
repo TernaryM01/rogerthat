@@ -60,6 +60,7 @@ impl Guesser for Cached {
         for (&word, _) in dict {
             // measure goodness, which is the expected value of the information
             // - SUM_i p_i * log_2(p_i)
+
             let mut goodness = 0.0;
             for pattern in Correctness::all_patterns() {
                 let mut in_pattern_total = 0;
@@ -73,6 +74,7 @@ impl Guesser for Cached {
                     }
                 }
                 if in_pattern_total == 0 {
+                    // avoid indeterminate arithmetic (NaN) which should evaluate to 0
                     continue;
                 }
                 let prob_of_pattern = in_pattern_total as f64 / remaining_count as f64;

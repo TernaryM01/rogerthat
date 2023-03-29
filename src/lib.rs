@@ -25,12 +25,12 @@ impl Wordle {
         }
     }
 
-    pub fn play<G: Guesser>(&self, answer: Word, mut guesser: G) -> Option<usize> {
+    pub fn play<G: Guesser>(&self, answer: &Word, guesser: &mut G) -> Option<usize> {
         let mut history = Vec::new();
         for i in 1..=MAX_GUESSES {
             let guess = guesser.guess(&history);
             // println!("Guessing {}", guess);
-            if guess == answer {
+            if guess == *answer {
                 println!(
                     "Guessed {}, which is the answer.",
                     std::str::from_utf8(&guess).unwrap()
@@ -39,12 +39,12 @@ impl Wordle {
             }
 
             assert!(self.dictionary.contains(&guess));
-            let correctness = Correctness::compute(answer, guess);
+            let correctness = Correctness::compute(answer, &guess);
             // println!("{}", Correctness::to_string(correctness));
             println!(
                 "Guessed {}, received pattern {}.",
                 std::str::from_utf8(&guess).unwrap(),
-                Correctness::to_string(correctness)
+                Correctness::to_string(&correctness)
             );
             history.push(Guess {
                 word: guess,
@@ -56,7 +56,7 @@ impl Wordle {
 }
 
 impl Correctness {
-    fn is_misplaced(&letter: &u8, &answer: &Word, used: &mut [bool; 5]) -> bool {
+    fn is_misplaced(letter: u8, answer: &Word, used: &mut [bool; 5]) -> bool {
         // // Look at this functional programming obsession from the original programmer.
         // // What a DISEASE!
         // answer.iter().zip(used.iter_mut()).any(|(a, u)| {
@@ -78,7 +78,7 @@ impl Correctness {
         false
     }
 
-    fn compute(answer: Word, guess: Word) -> [Self; 5] {
+    fn compute(answer: &Word, guess: &Word) -> [Self; 5] {
         assert_eq!(answer.len(), 5);
         assert_eq!(guess.len(), 5);
 
@@ -102,7 +102,7 @@ impl Correctness {
                 // Already marked as green
                 continue;
             }
-            if Self::is_misplaced(&guess[i], &answer, &mut used) {
+            if Self::is_misplaced(guess[i], &answer, &mut used) {
                 mask[i] = Correctness::Misplaced;
             }
         }
@@ -110,7 +110,7 @@ impl Correctness {
         mask
     }
 
-    fn to_string(pattern: [Self; 5]) -> String {
+    fn to_string(pattern: &[Self; 5]) -> String {
         let mut res = String::with_capacity(5);
         for m in pattern {
             match m {
@@ -198,7 +198,7 @@ impl Guess {
                 // Already checked for green mark
                 continue;
             }
-            if Correctness::is_misplaced(&self.word[i], &other_word, &mut used)
+            if Correctness::is_misplaced(self.word[i], &other_word, &mut used)
                 != (self.mask[i] == Correctness::Misplaced)
             {
                 return false;
@@ -251,69 +251,69 @@ mod tests {
         #[test]
         fn genius() {
             let w = Wordle::new();
-            let guesser = guesser!(|_history| { *b"right" });
-            assert_eq!(w.play(*b"right", guesser), Some(1));
+            let mut guesser = guesser!(|_history| { *b"right" });
+            assert_eq!(w.play(b"right", &mut guesser), Some(1));
         }
         #[test]
         fn magnificent() {
             let w = Wordle::new();
-            let guesser = guesser!(|history| {
+            let mut guesser = guesser!(|history| {
                 if history.len() == 1 {
                     return *b"right";
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(*b"right", guesser), Some(2));
+            assert_eq!(w.play(b"right", &mut guesser), Some(2));
         }
         #[test]
         fn impressive() {
             let w = Wordle::new();
-            let guesser = guesser!(|history| {
+            let mut guesser = guesser!(|history| {
                 if history.len() == 2 {
                     return *b"right";
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(*b"right", guesser), Some(3));
+            assert_eq!(w.play(b"right", &mut guesser), Some(3));
         }
         #[test]
         fn splendid() {
             let w = Wordle::new();
-            let guesser = guesser!(|history| {
+            let mut guesser = guesser!(|history| {
                 if history.len() == 3 {
                     return *b"right";
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(*b"right", guesser), Some(4));
+            assert_eq!(w.play(b"right", &mut guesser), Some(4));
         }
         #[test]
         fn great() {
             let w = Wordle::new();
-            let guesser = guesser!(|history| {
+            let mut guesser = guesser!(|history| {
                 if history.len() == 4 {
                     return *b"right";
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(*b"right", guesser), Some(5));
+            assert_eq!(w.play(b"right", &mut guesser), Some(5));
         }
         #[test]
         fn phew() {
             let w = Wordle::new();
-            let guesser = guesser!(|history| {
+            let mut guesser = guesser!(|history| {
                 if history.len() == 5 {
                     return *b"right";
                 }
                 *b"wrong"
             });
-            assert_eq!(w.play(*b"right", guesser), Some(6));
+            assert_eq!(w.play(b"right", &mut guesser), Some(6));
         }
         #[test]
         fn oops() {
             let w = Wordle::new();
-            let guesser = guesser!(|_history| { *b"wrong" });
-            assert_eq!(w.play(*b"right", guesser), None);
+            let mut guesser = guesser!(|_history| { *b"wrong" });
+            assert_eq!(w.play(b"right", &mut guesser), None);
         }
     }
 
@@ -322,41 +322,41 @@ mod tests {
 
         #[test]
         fn all_green() {
-            assert_eq!(Correctness::compute(*b"abcde", *b"abcde"), mask!(C C C C C));
+            assert_eq!(Correctness::compute(b"abcde", b"abcde"), mask!(C C C C C));
         }
         #[test]
         fn all_gray() {
-            assert_eq!(Correctness::compute(*b"abcde", *b"fghij"), mask!(W W W W W));
+            assert_eq!(Correctness::compute(b"abcde", b"fghij"), mask!(W W W W W));
         }
         #[test]
         fn all_yellow() {
-            assert_eq!(Correctness::compute(*b"abcde", *b"eabcd"), mask!(M M M M M));
+            assert_eq!(Correctness::compute(b"abcde", b"eabcd"), mask!(M M M M M));
         }
         #[test]
         fn repeat_green() {
-            assert_eq!(Correctness::compute(*b"aabbb", *b"aaccc"), mask!(C C W W W));
+            assert_eq!(Correctness::compute(b"aabbb", b"aaccc"), mask!(C C W W W));
         }
         #[test]
         fn repeat_yellow() {
-            assert_eq!(Correctness::compute(*b"aabbb", *b"ccaac"), mask!(W W M M W));
+            assert_eq!(Correctness::compute(b"aabbb", b"ccaac"), mask!(W W M M W));
         }
         #[test]
         fn repeat_some_green() {
-            assert_eq!(Correctness::compute(*b"aabbb", *b"caacc"), mask!(W C M W W));
+            assert_eq!(Correctness::compute(b"aabbb", b"caacc"), mask!(W C M W W));
         }
         #[test]
         fn decent_chat() {
-            assert_eq!(Correctness::compute(*b"azzaz", *b"aaabb"), mask!(C M W W W));
+            assert_eq!(Correctness::compute(b"azzaz", b"aaabb"), mask!(C M W W W));
         }
         #[test]
         fn dumb_chat() {
-            assert_eq!(Correctness::compute(*b"abcde", *b"aacde"), mask!(C W C C C));
+            assert_eq!(Correctness::compute(b"abcde", b"aacde"), mask!(C W C C C));
         }
         #[test]
         fn ambiguous() {
-            assert_eq!(Correctness::compute(*b"ccaca", *b"aabba"), mask!(M W W W C));
+            assert_eq!(Correctness::compute(b"ccaca", b"aabba"), mask!(M W W W C));
             // The following mask should really match as well.
-            assert_ne!(Correctness::compute(*b"ccaca", *b"aabba"), mask!(W M W W C));
+            assert_ne!(Correctness::compute(b"ccaca", b"aabba"), mask!(W M W W C));
         }
     }
     mod guess_matcher {
@@ -369,7 +369,7 @@ mod tests {
                     mask: mask![$($mask )+]
                 }
                 .matches($next));
-                assert_eq!($crate::Correctness::compute(*$next, *$prev), mask![$($mask )+]);
+                assert_eq!($crate::Correctness::compute($next, $prev), mask![$($mask )+]);
             };
             ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
                 assert!(!Guess {
@@ -377,7 +377,7 @@ mod tests {
                     mask: mask![$($mask )+]
                 }
                 .matches($next));
-                assert_ne!($crate::Correctness::compute(*$next, *$prev), mask![$($mask )+]);
+                assert_ne!($crate::Correctness::compute($next, $prev), mask![$($mask )+]);
             }
         }
 

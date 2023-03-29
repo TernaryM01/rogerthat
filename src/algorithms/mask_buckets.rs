@@ -59,11 +59,12 @@ impl Guesser for MaskBuckets {
         let mut best: Option<Candidate> = None;
         let dict = INITIAL.get().unwrap();
         for (&word, _) in dict {
-            // // measure goodness, which is the expected value of the information
-            // // - SUM_i p_i * log_2(p_i)
+            // measure goodness, which is the expected value of the information
+            // - SUM_i p_i * log_2(p_i)
+
             let mut mask_buckets = Array5::<usize>::zeros((3, 3, 3, 3, 3));
             for (candidate, count) in &*self.remaining {
-                let mask = Correctness::compute(*candidate, word);
+                let mask = Correctness::compute(candidate, &word);
                 mask_buckets[[
                     mask[0] as usize,
                     mask[1] as usize,
@@ -83,6 +84,7 @@ impl Guesser for MaskBuckets {
                     mask[4] as usize,
                 ]];
                 if in_pattern_total == 0 {
+                    // avoid indeterminate arithmetic (NaN) which should evaluate to 0
                     continue;
                 }
                 let prob_of_pattern = (in_pattern_total as f64) / (remaining_count as f64);
@@ -101,7 +103,7 @@ impl Guesser for MaskBuckets {
                     if !self.remaining.contains_key(&c.word) {
                         // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
                         best = Some(Candidate { word, goodness });
-                    // if both words haven't been ruled out, favor the more common one
+                    // if neither word has been ruled out, favor the more common one
                     } else if self.remaining.contains_key(&word)
                         && (dict.get(&word) > dict.get(&c.word))
                     {
