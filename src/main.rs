@@ -18,6 +18,7 @@ struct Cli {
 enum Implementation {
     Naive,
     Cached,
+    MaskBuckets,
 }
 
 const GAMES: &str = include_str!("../answers.txt");
@@ -33,6 +34,11 @@ fn main() {
         ),
         Implementation::Cached => play(
             || rogerthat::algorithms::Cached::new(),
+            cli.num_rounds,
+            cli.skipped_rounds,
+        ),
+        Implementation::MaskBuckets => play(
+            || rogerthat::algorithms::MaskBuckets::new(),
             cli.num_rounds,
             cli.skipped_rounds,
         ),

@@ -1,3 +1,4 @@
+use ndarray::Array5;
 use once_cell::sync::OnceCell;
 
 use crate::{Correctness, Guess, Guesser, Word, DICTIONARY};
@@ -5,11 +6,11 @@ use std::{borrow::Cow, collections::HashMap};
 
 static INITIAL: OnceCell<HashMap<Word, usize>> = OnceCell::new();
 
-pub struct Cached {
+pub struct MaskBuckets {
     remaining: Cow<'static, HashMap<Word, usize>>,
 }
 
-impl Cached {
+impl MaskBuckets {
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
@@ -35,7 +36,7 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for Cached {
+impl Guesser for MaskBuckets {
     fn guess(&mut self, history: &[Guess]) -> Word {
         if let Some(last) = history.last() {
             self.remaining.to_mut().retain(|word, _| last.matches(word));
@@ -58,24 +59,33 @@ impl Guesser for Cached {
         let mut best: Option<Candidate> = None;
         let dict = INITIAL.get().unwrap();
         for (&word, _) in dict {
-            // measure goodness, which is the expected value of the information
-            // - SUM_i p_i * log_2(p_i)
+            // // measure goodness, which is the expected value of the information
+            // // - SUM_i p_i * log_2(p_i)
+            let mut mask_buckets = Array5::<usize>::zeros((3, 3, 3, 3, 3));
+            for (candidate, count) in &*self.remaining {
+                let mask = Correctness::compute(word, *candidate);
+                mask_buckets[[
+                    mask[0] as usize,
+                    mask[1] as usize,
+                    mask[2] as usize,
+                    mask[3] as usize,
+                    mask[4] as usize,
+                ]] += count;
+            }
+
             let mut goodness = 0.0;
-            for pattern in Correctness::all_patterns() {
-                let mut in_pattern_total = 0;
-                for (candidate, count) in &*self.remaining {
-                    let g = Guess {
-                        word: word,
-                        mask: pattern,
-                    };
-                    if g.matches(candidate) {
-                        in_pattern_total += count;
-                    }
-                }
+            for mask in Correctness::all_patterns() {
+                let in_pattern_total = mask_buckets[[
+                    mask[0] as usize,
+                    mask[1] as usize,
+                    mask[2] as usize,
+                    mask[3] as usize,
+                    mask[4] as usize,
+                ]];
                 if in_pattern_total == 0 {
                     continue;
                 }
-                let prob_of_pattern = in_pattern_total as f64 / remaining_count as f64;
+                let prob_of_pattern = (in_pattern_total as f64) / (remaining_count as f64);
                 goodness -= prob_of_pattern * prob_of_pattern.log2();
             }
 
