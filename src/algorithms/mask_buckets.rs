@@ -63,7 +63,7 @@ impl Guesser for MaskBuckets {
             // // - SUM_i p_i * log_2(p_i)
             let mut mask_buckets = Array5::<usize>::zeros((3, 3, 3, 3, 3));
             for (candidate, count) in &*self.remaining {
-                let mask = Correctness::compute(word, *candidate);
+                let mask = Correctness::compute(*candidate, word);
                 mask_buckets[[
                     mask[0] as usize,
                     mask[1] as usize,
