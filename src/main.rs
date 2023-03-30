@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use rogerthat::Guesser;
+use rogerthat::{to_word, Guesser, Word, Wordle};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -50,14 +50,14 @@ fn play<G: Guesser>(
     num_rounds: Option<usize>,
     skipped_rounds: Option<usize>,
 ) {
-    let w = rogerthat::Wordle::new();
+    let w = Wordle::new();
     for answer in GAMES
         .split_whitespace()
         .skip(skipped_rounds.unwrap_or(0))
         .take(num_rounds.unwrap_or(usize::MAX))
     {
         let mut guesser = (mk)();
-        let answer_b: rogerthat::Word = answer.as_bytes().try_into().expect("");
+        let answer_b: Word = to_word(answer);
         if let Some(score) = w.play(&answer_b, &mut guesser) {
             println!("The answer is {}, took {} tries.", answer, score);
         } else {

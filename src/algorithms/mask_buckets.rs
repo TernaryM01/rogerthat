@@ -1,7 +1,8 @@
 use ndarray::Array5;
 use once_cell::sync::OnceCell;
 
-use crate::{Correctness, Guess, Guesser, Word, DICTIONARY};
+use crate::{to_word, Correctness, Guess, Guesser, Word, DICTIONARY};
+use ascii::ToAsciiChar;
 use std::{borrow::Cow, collections::HashMap};
 
 static INITIAL: OnceCell<HashMap<Word, usize>> = OnceCell::new();
@@ -18,12 +19,9 @@ impl MaskBuckets {
                     let (word, count) = line
                         .split_once(' ')
                         .expect("Every line must be of the format: word + space + frequency");
-                    let word: Word = word
-                        .as_bytes()
-                        .try_into()
-                        .expect("Every word should consist of 5 characters");
+                    let word: [char; 5] = word.chars().collect::<Vec<char>>().try_into().unwrap();
                     let count: usize = count.parse().expect("Every count should be a number");
-                    (word, count)
+                    (word.map(|c| c.to_ascii_char().unwrap()), count)
                 }))
             })),
         }
@@ -51,7 +49,7 @@ impl Guesser for MaskBuckets {
             }
         } else {
             // First guess
-            return *b"crate";
+            return to_word("crate");
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
