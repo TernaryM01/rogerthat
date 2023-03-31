@@ -98,14 +98,12 @@ impl Guesser for MaskBuckets {
                 // pretty common when there are few words left
                 } else if goodness == c.goodness {
                     // disfavor a word that has been ruled out
-                    if !self.remaining.contains_key(&c.word) {
-                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
-                        best = Some(Candidate { word, goodness });
-                    // if neither word has been ruled out, favor the more common one
-                    } else if self.remaining.contains_key(&word)
-                        && (dict.get(&word) > dict.get(&c.word))
+                    // if both words haven't been ruled out, favor the more common one
+                    if !self.remaining.contains_key(&c.word)
+                        || (self.remaining.contains_key(&word))
+                            && (dict.get(&word) > dict.get(&c.word))
                     {
-                        // println!("'{}' has not been ruled out", std::str::from_utf8(&word).unwrap());
+                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
                         best = Some(Candidate { word, goodness });
                     }
                 }

@@ -48,6 +48,7 @@ impl Wordle {
         for i in 1..=MAX_GUESSES {
             let guess = guesser.guess(&history);
             // println!("Guessing {}", guess);
+            // TODO: Figure out a better way to print array of AsciiChar
             if guess == *answer {
                 println!(
                     "Guessed {}{}{}{}{}, which is the answer.",
@@ -59,6 +60,7 @@ impl Wordle {
             assert!(self.dictionary.contains(&guess));
             let correctness = Correctness::compute(answer, &guess);
             // println!("{}", Correctness::to_string(correctness));
+            // TODO: Figure out a better way to print array of AsciiChar
             println!(
                 "Guessed {}{}{}{}{}, received pattern {}.",
                 guess[0],
@@ -88,9 +90,9 @@ impl Correctness {
         //     }
         //     false
         // })
-
         // Because all the lengths are carried by the types,
         // the compiler should be able to eliminate all redundant bounds checks!
+
         for i in 0..5 {
             if (answer[i] == letter) && !used[i] {
                 used[i] = true;
@@ -101,14 +103,17 @@ impl Correctness {
     }
 
     fn compute(answer: &Word, guess: &Word) -> [Self; 5] {
-        assert_eq!(answer.len(), 5);
-        assert_eq!(guess.len(), 5);
+        // assert_eq!(answer.len(), 5);
+        // assert_eq!(guess.len(), 5);
 
         // Initialize as all gray
         // // Specifying the type lengths explicitly might be unnecessary.
         // // This is to make sure that the compiler makes use of them.
         let mut mask: [Correctness; 5] = [Correctness::Wrong; 5];
         let mut used: [bool; 5] = [false; 5];
+        // Because I'm not sure how bounds check work, might as well:
+        // assert_eq!(mask.len(), 5);
+        // assert_eq!(used.len(), 5);
 
         // Mark things green
         for i in 0..5 {
@@ -124,7 +129,7 @@ impl Correctness {
                 // Already marked as green
                 continue;
             }
-            if Self::is_misplaced(guess[i], &answer, &mut used) {
+            if Self::is_misplaced(guess[i], answer, &mut used) {
                 mask[i] = Correctness::Misplaced;
             }
         }
@@ -145,6 +150,7 @@ impl Correctness {
     }
 
     // generate all correctness patterns
+    #[inline(always)]
     pub fn all_patterns() -> impl Iterator<Item = [Self; 5]> {
         itertools::iproduct!(
             [Self::Correct, Self::Misplaced, Self::Wrong],
@@ -175,13 +181,19 @@ pub struct Guess {
 impl Guess {
     pub fn matches(&self, other_word: &Word) -> bool {
         // // This one also works, but slower because it lacks short-circuiting:
-        // return Correctness::compute(other_word, &self.word) == self.mask;
+        // return Correctness::compute(other_word, self.word) == self.mask;
 
-        assert_eq!(self.word.len(), 5);
-        assert_eq!(other_word.len(), 5);
+        // Because I'm not sure how bounds check work, might as well
+        // specify the length two different ways (type and assert):
+        // assert_eq!(self.word.len(), 5);
+        // assert_eq!(self.mask.len(), 5);
+        // assert_eq!(other_word.len(), 5);
+        // Update: Turns out those asserts are unnecessary to avoid extraneous bounds checks, so they've been commented out.
+
+        let mut used: [bool; 5] = [false; 5];
+        // assert_eq!(used.len(), 5);
 
         // Check green marks
-        let mut used: [bool; 5] = [false; 5];
         // for (i, (g, o)) in self.word.iter().zip(other_word.iter()).enumerate() {
         //     if g == o {
         //         if self.mask[i] != Correctness::Correct {
@@ -220,7 +232,7 @@ impl Guess {
                 // Already checked for green mark
                 continue;
             }
-            if Correctness::is_misplaced(self.word[i], &other_word, &mut used)
+            if Correctness::is_misplaced(self.word[i], other_word, &mut used)
                 != (self.mask[i] == Correctness::Misplaced)
             {
                 return false;

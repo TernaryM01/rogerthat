@@ -59,7 +59,7 @@ impl Guesser for Naive {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &self.remaining {
                     let g = Guess {
-                        word: word,
+                        word,
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -82,14 +82,12 @@ impl Guesser for Naive {
                 // pretty common when there are few words left
                 } else if goodness == c.goodness {
                     // disfavor a word that has been ruled out
-                    if !self.remaining.contains_key(&c.word) {
-                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
-                        best = Some(Candidate { word, goodness });
                     // if both words haven't been ruled out, favor the more common one
-                    } else if (self.remaining.contains_key(&word))
-                        && (self.initial.get(&word) > self.initial.get(&c.word))
+                    if !self.remaining.contains_key(&c.word)
+                        || (self.remaining.contains_key(&word))
+                            && (self.initial.get(&word) > self.initial.get(&c.word))
                     {
-                        // println!("'{}' has not been ruled out", std::str::from_utf8(&word).unwrap());
+                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
                         best = Some(Candidate { word, goodness });
                     }
                 }
