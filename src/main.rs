@@ -5,7 +5,7 @@ use rogerthat::{to_word, Guesser, Word, Wordle};
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[arg(short, long, value_enum)]
-    implementation: Implementation,
+    implementation: Option<Implementation>,
 
     #[clap(short, long)]
     num_rounds: Option<usize>,
@@ -19,6 +19,7 @@ enum Implementation {
     Naive,
     Cached,
     MaskBuckets,
+    Memoized,
 }
 
 const GAMES: &str = include_str!("../answers.txt");
@@ -27,18 +28,23 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.implementation {
-        Implementation::Naive => play(
+        Some(Implementation::Naive) => play(
             || rogerthat::algorithms::Naive::new(),
             cli.num_rounds,
             cli.skipped_rounds,
         ),
-        Implementation::Cached => play(
+        Some(Implementation::Cached) => play(
             || rogerthat::algorithms::Cached::new(),
             cli.num_rounds,
             cli.skipped_rounds,
         ),
-        Implementation::MaskBuckets => play(
+        Some(Implementation::MaskBuckets) | None => play(
             || rogerthat::algorithms::MaskBuckets::new(),
+            cli.num_rounds,
+            cli.skipped_rounds,
+        ),
+        Some(Implementation::Memoized) => play(
+            || rogerthat::algorithms::Memoized::new(),
             cli.num_rounds,
             cli.skipped_rounds,
         ),
@@ -51,12 +57,12 @@ fn play<G: Guesser>(
     skipped_rounds: Option<usize>,
 ) {
     let w = Wordle::new();
+    let mut guesser = (mk)();
     for answer in GAMES
         .split_whitespace()
         .skip(skipped_rounds.unwrap_or(0))
-        .take(num_rounds.unwrap_or(usize::MAX))
+        .take(num_rounds.unwrap_or(10))
     {
-        let mut guesser = (mk)();
         let answer_b: Word = to_word(answer);
         if let Some(score) = w.play(&answer_b, &mut guesser) {
             println!("The answer is {}, took {} tries.", answer, score);

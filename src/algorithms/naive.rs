@@ -45,6 +45,7 @@ impl Guesser for Naive {
             }
         } else {
             // First guess
+            self.remaining = self.initial.clone();
             return to_word("crate");
         }
 

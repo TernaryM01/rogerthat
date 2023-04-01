@@ -51,7 +51,7 @@ impl Wordle {
             // TODO: Figure out a better way to print array of AsciiChar
             if guess == *answer {
                 println!(
-                    "Guessed {}{}{}{}{}, which is the answer.",
+                    "Guessed '{}{}{}{}{}', which is the answer.",
                     guess[0], guess[1], guess[2], guess[3], guess[4]
                 );
                 return Some(i);
@@ -62,7 +62,7 @@ impl Wordle {
             // println!("{}", Correctness::to_string(correctness));
             // TODO: Figure out a better way to print array of AsciiChar
             println!(
-                "Guessed {}{}{}{}{}, received pattern {}.",
+                "Guessed '{}{}{}{}{}', received pattern {}.",
                 guess[0],
                 guess[1],
                 guess[2],
@@ -165,12 +165,12 @@ impl Correctness {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Correctness {
-    // Green
-    Correct,
-    // Yellow
-    Misplaced,
     // Gray
     Wrong,
+    // Yellow
+    Misplaced,
+    // Green
+    Correct,
 }
 
 pub struct Guess {

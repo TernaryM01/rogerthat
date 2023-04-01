@@ -7,11 +7,20 @@ use std::{borrow::Cow, collections::HashMap};
 
 static INITIAL: OnceCell<HashMap<Word, usize>> = OnceCell::new();
 
-pub struct MaskBuckets {
+pub struct Memoized {
     remaining: Cow<'static, HashMap<Word, usize>>,
+    second_guess: [Option<Word>; 3 * 3 * 3 * 3 * 3],
 }
 
-impl MaskBuckets {
+fn get_mask_idx(mask: [Correctness; 5]) -> usize {
+    (mask[0] as usize) * (3 as usize).pow(0)
+        + (mask[1] as usize) * (3 as usize).pow(1)
+        + (mask[2] as usize) * (3 as usize).pow(2)
+        + (mask[3] as usize) * (3 as usize).pow(3)
+        + (mask[4] as usize) * (3 as usize).pow(4)
+}
+
+impl Memoized {
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
@@ -24,6 +33,7 @@ impl MaskBuckets {
                     (word.map(|c| c.to_ascii_char().unwrap()), count)
                 }))
             })),
+            second_guess: [None; 3 * 3 * 3 * 3 * 3],
         }
     }
 }
@@ -34,7 +44,7 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for MaskBuckets {
+impl Guesser for Memoized {
     fn guess(&mut self, history: &[Guess]) -> Word {
         if let Some(last) = history.last() {
             self.remaining.to_mut().retain(|word, _| last.matches(word));
@@ -51,6 +61,15 @@ impl Guesser for MaskBuckets {
             // First guess
             self.remaining = Cow::Borrowed(INITIAL.get().unwrap());
             return to_word("crate");
+        }
+
+        // retrieve memoized second guess
+        if history.len() == 1 {
+            // println!("Second guess");
+            if let Some(word) = self.second_guess[get_mask_idx(history.last().unwrap().mask)] {
+                println!("I remember this!");
+                return word;
+            }
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
@@ -113,6 +132,14 @@ impl Guesser for MaskBuckets {
                 best = Some(Candidate { word, goodness });
             }
         }
-        best.unwrap().word
+        let guess = best.unwrap().word;
+
+        // If this is the second guess, remember it.
+        if history.len() == 1 {
+            // println!("Second guess");
+            self.second_guess[get_mask_idx(history.last().unwrap().mask)] = Some(guess);
+        }
+
+        guess
     }
 }

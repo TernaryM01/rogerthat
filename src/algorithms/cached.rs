@@ -48,6 +48,7 @@ impl Guesser for Cached {
             }
         } else {
             // First guess
+            self.remaining = Cow::Borrowed(INITIAL.get().unwrap());
             return to_word("crate");
         }
 
