@@ -10,7 +10,6 @@ const DICTIONARY: &str = include_str!("../dictionary.txt");
 const MAX_GUESSES: usize = 100;
 
 pub struct Wordle {
-    // dictionary: HashSet<&'static Word>,
     dictionary: HashSet<Word>,
 }
 
@@ -30,14 +29,6 @@ pub fn nice_print(word: Word) -> ColoredString {
 impl Wordle {
     pub fn new() -> Self {
         Self {
-            // dictionary: HashSet::from_iter(DICTIONARY.lines().map(|line| {
-            //     line.split_once(' ')
-            //         .expect("Every line must be of the format: word + space + frequency")
-            //         .0
-            //         .as_bytes()
-            //         .try_into()
-            //         .expect("Every word should consist of 5 characters")
-            // })),
             dictionary: HashSet::from_iter(DICTIONARY.lines().map(|line| {
                 let word: [char; 5] = line
                     .split_once(' ')
@@ -46,7 +37,7 @@ impl Wordle {
                     .chars()
                     .collect::<Vec<char>>()
                     .try_into()
-                    .unwrap();
+                    .expect("Every word should consist of 5 characters");
                 word.map(|c| {
                     c.to_ascii_char()
                         .expect("Only ASCII characters are allowed")
@@ -59,8 +50,6 @@ impl Wordle {
         let mut history = Vec::new();
         for i in 1..=MAX_GUESSES {
             let guess = guesser.guess(&history);
-            // println!("Guessing {}", guess);
-            // TODO: Figure out a better way to print array of AsciiChar
             if guess == *answer {
                 println!("Guessed '{}', which is the answer.", nice_print(guess));
                 return Some(i);
@@ -68,8 +57,6 @@ impl Wordle {
 
             assert!(self.dictionary.contains(&guess));
             let correctness = Correctness::compute(answer, &guess);
-            // println!("{}", Correctness::to_string(correctness));
-            // TODO: Figure out a better way to print array of AsciiChar
             println!(
                 "Guessed '{}', received pattern: {}",
                 nice_print(guess),
@@ -86,18 +73,8 @@ impl Wordle {
 
 impl Correctness {
     fn is_misplaced(letter: AsciiChar, answer: &Word, used: &mut [bool; 5]) -> bool {
-        // // Look at this functional programming obsession from the original programmer.
-        // // What a DISEASE!
-        // answer.iter().zip(used.iter_mut()).any(|(a, u)| {
-        //     if *a == letter && !*u {
-        //         *u = true;
-        //         return true;
-        //     }
-        //     false
-        // })
         // Because all the lengths are carried by the types,
         // the compiler should be able to eliminate all redundant bounds checks!
-
         for i in 0..5 {
             if (answer[i] == letter) && !used[i] {
                 used[i] = true;
@@ -108,17 +85,12 @@ impl Correctness {
     }
 
     fn compute(answer: &Word, guess: &Word) -> [Self; 5] {
-        // assert_eq!(answer.len(), 5);
-        // assert_eq!(guess.len(), 5);
+        // Because all the lengths are carried by the types,
+        // the compiler should be able to eliminate all redundant bounds checks!
 
         // Initialize as all gray
-        // // Specifying the type lengths explicitly might be unnecessary.
-        // // This is to make sure that the compiler makes use of them.
         let mut mask: [Correctness; 5] = [Correctness::Wrong; 5];
         let mut used: [bool; 5] = [false; 5];
-        // Because I'm not sure how bounds check work, might as well:
-        // assert_eq!(mask.len(), 5);
-        // assert_eq!(used.len(), 5);
 
         // Mark things green
         for i in 0..5 {
@@ -188,27 +160,12 @@ impl Guess {
         // // This one also works, but slower because it lacks short-circuiting:
         // return Correctness::compute(other_word, self.word) == self.mask;
 
-        // Because I'm not sure how bounds check work, might as well
-        // specify the length two different ways (type and assert):
-        // assert_eq!(self.word.len(), 5);
-        // assert_eq!(self.mask.len(), 5);
-        // assert_eq!(other_word.len(), 5);
-        // Update: Turns out those asserts are unnecessary to avoid extraneous bounds checks, so they've been commented out.
+        // Because all the lengths are carried by the types,
+        // the compiler should be able to eliminate all redundant bounds checks!
 
         let mut used: [bool; 5] = [false; 5];
-        // assert_eq!(used.len(), 5);
 
         // Check green marks
-        // for (i, (g, o)) in self.word.iter().zip(other_word.iter()).enumerate() {
-        //     if g == o {
-        //         if self.mask[i] != Correctness::Correct {
-        //             return false;
-        //         }
-        //         used[i] = true;
-        //     } else if self.mask[i] == Correctness::Correct {
-        //         return false;
-        //     }
-        // }
         for i in 0..5 {
             if self.word[i] == other_word[i] {
                 if self.mask[i] != Correctness::Correct {
@@ -220,18 +177,6 @@ impl Guess {
             }
         }
 
-        // Check yellow marks
-        // // for (g, m) in self.word.iter().zip(self.mask.iter()) {
-        // //     if *m == Correctness::Correct {
-        // //         // Already checked for green mark
-        // //         continue;
-        // //     }
-        // //     if Correctness::is_misplaced(&g, &other_word, &mut used)
-        // //         != (*m == Correctness::Misplaced)
-        // //     {
-        // //         return false;
-        // //     }
-        // // }
         for i in 0..5 {
             if self.mask[i] == Correctness::Correct {
                 // Already checked for green mark

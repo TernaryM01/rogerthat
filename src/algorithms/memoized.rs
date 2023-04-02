@@ -65,7 +65,6 @@ impl Guesser for Memoized {
 
         // retrieve memoized second guess
         if history.len() == 1 {
-            // println!("Second guess");
             if let Some(word) = self.second_guess[get_mask_idx(history.last().unwrap().mask)] {
                 println!("I remember this!");
                 return word;
@@ -112,10 +111,10 @@ impl Guesser for Memoized {
             if let Some(c) = best {
                 // Is this one better?
                 if goodness > c.goodness {
-                    // println!("{} is better than {} ({} > {})", word, c.word, goodness, c.goodness);
                     best = Some(Candidate { word, goodness })
 
-                // pretty common when there are few words left
+                // Tie is pretty common when there are few words left.
+                // Make sure to handle this situation well.
                 } else if goodness == c.goodness {
                     // disfavor a word that has been ruled out
                     // if both words haven't been ruled out, favor the more common one
@@ -123,12 +122,10 @@ impl Guesser for Memoized {
                         || (self.remaining.contains_key(&word))
                             && (dict.get(&word) > dict.get(&c.word))
                     {
-                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
                         best = Some(Candidate { word, goodness });
                     }
                 }
             } else {
-                // println!("starting with {} (goodness: {})", word, goodness);
                 best = Some(Candidate { word, goodness });
             }
         }
@@ -136,7 +133,6 @@ impl Guesser for Memoized {
 
         // If this is the second guess, remember it.
         if history.len() == 1 {
-            // println!("Second guess");
             self.second_guess[get_mask_idx(history.last().unwrap().mask)] = Some(guess);
         }
 

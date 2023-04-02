@@ -50,7 +50,7 @@ impl Guesser for MaskBuckets {
         } else {
             // First guess
             self.remaining = Cow::Borrowed(INITIAL.get().unwrap());
-            return to_word("crate");
+            return to_word("tares");
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
@@ -93,10 +93,10 @@ impl Guesser for MaskBuckets {
             if let Some(c) = best {
                 // Is this one better?
                 if goodness > c.goodness {
-                    // println!("{} is better than {} ({} > {})", word, c.word, goodness, c.goodness);
                     best = Some(Candidate { word, goodness })
 
-                // pretty common when there are few words left
+                // Tie is pretty common when there are few words left.
+                // Make sure to handle this situation well.
                 } else if goodness == c.goodness {
                     // disfavor a word that has been ruled out
                     // if both words haven't been ruled out, favor the more common one
@@ -104,12 +104,10 @@ impl Guesser for MaskBuckets {
                         || (self.remaining.contains_key(&word))
                             && (dict.get(&word) > dict.get(&c.word))
                     {
-                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
                         best = Some(Candidate { word, goodness });
                     }
                 }
             } else {
-                // println!("starting with {} (goodness: {})", word, goodness);
                 best = Some(Candidate { word, goodness });
             }
         }

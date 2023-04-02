@@ -35,6 +35,7 @@ impl Guesser for Naive {
     fn guess(&mut self, history: &[Guess]) -> Word {
         if let Some(last) = history.last() {
             self.remaining.retain(|word, _| last.matches(word));
+
             let num_remains = self.remaining.len();
             println!("Number of remaining possibilities: {}", num_remains);
             // If only 1 possibility remains, return that as the guess.
@@ -46,7 +47,7 @@ impl Guesser for Naive {
         } else {
             // First guess
             self.remaining = self.initial.clone();
-            return to_word("crate");
+            return to_word("tares");
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
@@ -68,6 +69,7 @@ impl Guesser for Naive {
                     }
                 }
                 if in_pattern_total == 0 {
+                    // avoid indeterminate arithmetic (NaN) which should evaluate to 0
                     continue;
                 }
                 let prob_of_pattern = in_pattern_total as f64 / remaining_count as f64;
@@ -77,10 +79,10 @@ impl Guesser for Naive {
             if let Some(c) = best {
                 // Is this one better?
                 if goodness > c.goodness {
-                    // println!("{} is better than {} ({} > {})", word, c.word, goodness, c.goodness);
                     best = Some(Candidate { word, goodness })
 
-                // pretty common when there are few words left
+                // Tie is pretty common when there are few words left.
+                // Make sure to handle this situation well.
                 } else if goodness == c.goodness {
                     // disfavor a word that has been ruled out
                     // if both words haven't been ruled out, favor the more common one
@@ -88,12 +90,10 @@ impl Guesser for Naive {
                         || (self.remaining.contains_key(&word))
                             && (self.initial.get(&word) > self.initial.get(&c.word))
                     {
-                        // println!("'{}' has been ruled out", std::str::from_utf8(&c.word).unwrap());
                         best = Some(Candidate { word, goodness });
                     }
                 }
             } else {
-                // println!("starting with {} (goodness: {})", word, goodness);
                 best = Some(Candidate { word, goodness });
             }
         }
