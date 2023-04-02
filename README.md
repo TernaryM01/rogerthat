@@ -23,8 +23,9 @@ Following the structure in the early days of roget [TODO: link to old version of
 1. Implement hard mode solver.
 2. Use sigmoid instead of bare frequency for modelling the probability distribution of the answer. (Because using bare frequency is so far off, the performance of using these solvers with normal mode is actually slightly worse than hard mode for the official list of Wordle answers.)
 3. Implement interactive mode, where the program works as helper for somebody playing Wordle somewhere else. It should be able to accomodate the user telling that a word is not allowed, arbitrary history of previous guesses (not just the ones that the program would choose), and displaying a list of most-recommended guesses instead of just 1.
-4. Decouple the server and the solver as separate concurrent programs, which then enables 100% efficient parallelization by simply having multiple solvers running at once on different games provided by the server.
-5. Use the end game strategy discussed by 3blue1brown [TODO: timestamp on video] by letting statistics of previous performance give estimation of expected number of guesses left. Overfitting on only the official list of Wordle answers, however, is despised.
+4. Try to memoize on arbitrarily long history of guesses, instead of just the second guess and assuming a hard-coded first guess. It should be a giant HashMap that stores the guesses made in the games that occured so far (not all possible games, which is astronomically big). Maintaining such a giant growing HashMap will have performance cost, but it should be worth it. There should be an option to save it to a file.
+5. Decouple the server and the solver as separate concurrent programs, which then enables 100% efficient parallelization by simply having multiple solvers running at once on different games provided by the server.
+6. Use the end game strategy discussed by 3blue1brown [TODO: timestamp on video] by letting statistics of previous performance give estimation of expected number of guesses left. Overfitting on only the official list of Wordle answers, however, is despised.
 
 # License
 
