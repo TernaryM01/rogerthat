@@ -60,7 +60,7 @@ impl Guesser for Memoized {
         } else {
             // First guess
             self.remaining = Cow::Borrowed(INITIAL.get().unwrap());
-            return to_word("crate");
+            return to_word("tares");
         }
 
         // retrieve memoized second guess

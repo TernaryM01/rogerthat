@@ -1,4 +1,5 @@
 use ascii::{AsciiChar, ToAsciiChar};
+use colored::{ColoredString, Colorize};
 use std::collections::HashSet;
 
 pub mod algorithms;
@@ -16,6 +17,14 @@ pub struct Wordle {
 pub fn to_word(slice: &str) -> Word {
     let word: [char; 5] = slice.chars().collect::<Vec<char>>().try_into().unwrap();
     word.map(|c| c.to_ascii_char().unwrap())
+}
+
+pub fn nice_print(word: Word) -> ColoredString {
+    let mut printed = String::new();
+    for ch in word {
+        printed.push(ch.as_char());
+    }
+    printed.to_uppercase().purple().bold()
 }
 
 impl Wordle {
@@ -38,7 +47,10 @@ impl Wordle {
                     .collect::<Vec<char>>()
                     .try_into()
                     .unwrap();
-                word.map(|c| c.to_ascii_char().unwrap())
+                word.map(|c| {
+                    c.to_ascii_char()
+                        .expect("Only ASCII characters are allowed")
+                })
             })),
         }
     }
@@ -50,10 +62,7 @@ impl Wordle {
             // println!("Guessing {}", guess);
             // TODO: Figure out a better way to print array of AsciiChar
             if guess == *answer {
-                println!(
-                    "Guessed '{}{}{}{}{}', which is the answer.",
-                    guess[0], guess[1], guess[2], guess[3], guess[4]
-                );
+                println!("Guessed '{}', which is the answer.", nice_print(guess));
                 return Some(i);
             }
 
@@ -62,12 +71,8 @@ impl Wordle {
             // println!("{}", Correctness::to_string(correctness));
             // TODO: Figure out a better way to print array of AsciiChar
             println!(
-                "Guessed '{}{}{}{}{}', received pattern {}.",
-                guess[0],
-                guess[1],
-                guess[2],
-                guess[3],
-                guess[4],
+                "Guessed '{}', received pattern: {}",
+                nice_print(guess),
                 Correctness::to_string(&correctness)
             );
             history.push(Guess {
@@ -141,9 +146,9 @@ impl Correctness {
         let mut res = String::with_capacity(5);
         for m in pattern {
             match m {
-                Correctness::Correct => res.push('C'),
-                Correctness::Misplaced => res.push('M'),
-                Correctness::Wrong => res.push('W'),
+                Correctness::Correct => res.push('🟩'),
+                Correctness::Misplaced => res.push('🟨'),
+                Correctness::Wrong => res.push('⬛'),
             };
         }
         res

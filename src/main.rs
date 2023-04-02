@@ -38,12 +38,12 @@ fn main() {
             cli.num_rounds,
             cli.skipped_rounds,
         ),
-        Some(Implementation::MaskBuckets) | None => play(
+        Some(Implementation::MaskBuckets) => play(
             || rogerthat::algorithms::MaskBuckets::new(),
             cli.num_rounds,
             cli.skipped_rounds,
         ),
-        Some(Implementation::Memoized) => play(
+        Some(Implementation::Memoized) | None => play(
             || rogerthat::algorithms::Memoized::new(),
             cli.num_rounds,
             cli.skipped_rounds,
@@ -63,6 +63,8 @@ fn play<G: Guesser>(
         .skip(skipped_rounds.unwrap_or(0))
         .take(num_rounds.unwrap_or(10))
     {
+        println!("New game");
+
         let answer_b: Word = to_word(answer);
         if let Some(score) = w.play(&answer_b, &mut guesser) {
             println!("The answer is {}, took {} tries.", answer, score);
