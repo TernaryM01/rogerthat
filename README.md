@@ -33,4 +33,4 @@ This work is licensed under the [MIT License](http://opensource.org/licenses/MIT
 
 # Acknowledgment
 
-This work is based on [roget](https://github.com/jonhoo/roget), with dramatic twists of its own, following in the original vision but rebuilding it to make it better.
+This work is based on [roget](https://github.com/jonhoo/roget), with dramatic twists of its own, following in the original vision but rebuilding it to make it better. The theoretical basis, based on information theory, is by [3blue1brown](https://www.youtube.com/@3blue1brown).
