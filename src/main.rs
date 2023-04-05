@@ -1,9 +1,12 @@
 use clap::{Parser, ValueEnum};
-use rogerthat::{to_word, Guesser, Word, Wordle};
+use rogerthat::modes::{interactive, run_all};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+    #[arg(short, long, value_enum)]
+    mode: Option<Mode>,
+
     #[arg(short, long, value_enum)]
     implementation: Option<Implementation>,
 
@@ -22,54 +25,47 @@ enum Implementation {
     Memoized,
 }
 
-const GAMES: &str = include_str!("../answers.txt");
+#[derive(Parser, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Mode {
+    RunAll,
+    Interactive,
+}
 
 fn main() {
     let cli = Cli::parse();
 
-    match cli.implementation {
-        Some(Implementation::Naive) => play(
-            || rogerthat::algorithms::Naive::new(),
-            cli.num_rounds,
-            cli.skipped_rounds,
-        ),
-        Some(Implementation::Cached) => play(
-            || rogerthat::algorithms::Cached::new(),
-            cli.num_rounds,
-            cli.skipped_rounds,
-        ),
-        Some(Implementation::MaskBuckets) => play(
-            || rogerthat::algorithms::MaskBuckets::new(),
-            cli.num_rounds,
-            cli.skipped_rounds,
-        ),
-        Some(Implementation::Memoized) | None => play(
-            || rogerthat::algorithms::Memoized::new(),
-            cli.num_rounds,
-            cli.skipped_rounds,
-        ),
-    }
-}
-
-fn play<G: Guesser>(
-    mut mk: impl FnMut() -> G,
-    num_rounds: Option<usize>,
-    skipped_rounds: Option<usize>,
-) {
-    let w = Wordle::new();
-    let mut guesser = (mk)();
-    for answer in GAMES
-        .split_whitespace()
-        .skip(skipped_rounds.unwrap_or(0))
-        .take(num_rounds.unwrap_or(10))
-    {
-        println!("New game");
-
-        let answer_b: Word = to_word(answer);
-        if let Some(score) = w.play(&answer_b, &mut guesser) {
-            println!("The answer is {}, took {} tries.", answer, score);
-        } else {
-            eprintln!("failed to guess");
-        }
+    match cli.mode {
+        Some(Mode::Interactive) => match cli.implementation {
+            Some(Implementation::Naive) => interactive(rogerthat::algorithms::Naive::new()),
+            Some(Implementation::Cached) => interactive(rogerthat::algorithms::Cached::new()),
+            Some(Implementation::MaskBuckets) => {
+                interactive(rogerthat::algorithms::MaskBuckets::new())
+            }
+            Some(Implementation::Memoized) | None => {
+                interactive(rogerthat::algorithms::Memoized::new())
+            }
+        },
+        Some(Mode::RunAll) | None => match cli.implementation {
+            Some(Implementation::Naive) => run_all(
+                || rogerthat::algorithms::Naive::new(),
+                cli.num_rounds,
+                cli.skipped_rounds,
+            ),
+            Some(Implementation::Cached) => run_all(
+                || rogerthat::algorithms::Cached::new(),
+                cli.num_rounds,
+                cli.skipped_rounds,
+            ),
+            Some(Implementation::MaskBuckets) => run_all(
+                || rogerthat::algorithms::MaskBuckets::new(),
+                cli.num_rounds,
+                cli.skipped_rounds,
+            ),
+            Some(Implementation::Memoized) | None => run_all(
+                || rogerthat::algorithms::Memoized::new(),
+                cli.num_rounds,
+                cli.skipped_rounds,
+            ),
+        },
     }
 }

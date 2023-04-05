@@ -89,7 +89,7 @@ impl Guesser for Cached {
                 // Make sure to handle this situation well.
                 } else if goodness == c.goodness {
                     // disfavor a word that has been ruled out
-                    // if both words haven't been ruled out, favor the more common one
+                    // if neither word has been ruled out, favor the more common one
                     if !self.remaining.contains_key(&c.word)
                         || (self.remaining.contains_key(&word))
                             && (dict.get(&word) > dict.get(&c.word))

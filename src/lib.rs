@@ -3,15 +3,12 @@ use colored::{ColoredString, Colorize};
 use std::collections::HashSet;
 
 pub mod algorithms;
+pub mod modes;
+
+// TODO: Make Word a Struct instead of a type alias ======================
+// Traits should then be implemented for it, such as to be used in HashMap
 
 pub type Word = [AsciiChar; 5];
-
-const DICTIONARY: &str = include_str!("../dictionary.txt");
-const MAX_GUESSES: usize = 100;
-
-pub struct Wordle {
-    dictionary: HashSet<Word>,
-}
 
 pub fn to_word(slice: &str) -> Word {
     let word: [char; 5] = slice.chars().collect::<Vec<char>>().try_into().unwrap();
@@ -24,6 +21,16 @@ pub fn nice_print(word: Word) -> ColoredString {
         printed.push(ch.as_char());
     }
     printed.to_uppercase().purple().bold()
+}
+
+// =======================================================================
+
+const DICTIONARY: &str = include_str!("../dictionary.txt");
+pub const GAMES: &str = include_str!("../answers.txt");
+const MAX_GUESSES: usize = 100;
+
+pub struct Wordle {
+    dictionary: HashSet<Word>,
 }
 
 impl Wordle {
@@ -177,6 +184,7 @@ impl Guess {
             }
         }
 
+        // Check yellow marks
         for i in 0..5 {
             if self.mask[i] == Correctness::Correct {
                 // Already checked for green mark
