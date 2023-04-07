@@ -23,6 +23,7 @@ enum Implementation {
     Cached,
     MaskBuckets,
     Memoized,
+    Interactive,
 }
 
 #[derive(Parser, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -35,16 +36,7 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.mode {
-        Some(Mode::Interactive) => match cli.implementation {
-            Some(Implementation::Naive) => interactive(rogerthat::algorithms::Naive::new()),
-            Some(Implementation::Cached) => interactive(rogerthat::algorithms::Cached::new()),
-            Some(Implementation::MaskBuckets) => {
-                interactive(rogerthat::algorithms::MaskBuckets::new())
-            }
-            Some(Implementation::Memoized) | None => {
-                interactive(rogerthat::algorithms::Memoized::new())
-            }
-        },
+        Some(Mode::Interactive) => interactive(),
         Some(Mode::RunAll) | None => match cli.implementation {
             Some(Implementation::Naive) => run_all(
                 || rogerthat::algorithms::Naive::new(),
@@ -63,6 +55,11 @@ fn main() {
             ),
             Some(Implementation::Memoized) | None => run_all(
                 || rogerthat::algorithms::Memoized::new(),
+                cli.num_rounds,
+                cli.skipped_rounds,
+            ),
+            Some(Implementation::Interactive) => run_all(
+                || rogerthat::algorithms::Interactive::new(),
                 cli.num_rounds,
                 cli.skipped_rounds,
             ),

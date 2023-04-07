@@ -6,3 +6,5 @@ mod mask_buckets;
 pub use mask_buckets::MaskBuckets;
 mod memoized;
 pub use memoized::Memoized;
+mod interactive;
+pub use interactive::Interactive;

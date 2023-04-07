@@ -1,13 +1,15 @@
-use crate::{to_word, Correctness, Guess, Guesser, Word, DICTIONARY};
+use crate::{nice_print, Correctness, Guess, Guesser, Word, DICTIONARY};
 use ascii::ToAsciiChar;
 use std::collections::HashMap;
 
-pub struct Naive {
+use ndarray::Array5;
+
+pub struct Interactive {
     initial: HashMap<Word, usize>,
     remaining: HashMap<Word, usize>,
 }
 
-impl Naive {
+impl Interactive {
     pub fn new() -> Self {
         let initial = HashMap::from_iter(DICTIONARY.lines().map(|line| {
             let (word, count) = line
@@ -20,6 +22,23 @@ impl Naive {
         let remaining = initial.clone();
         Self { initial, remaining }
     }
+
+    pub fn remove(&mut self, word: &Word) {
+        self.initial.remove(word);
+        self.remaining.remove(word);
+        println!(
+            "Adjusted to the fact that {} is not allowed.",
+            nice_print(*word)
+        );
+    }
+
+    pub fn eliminate(&mut self, word: &Word) {
+        self.remaining.remove(word);
+        println!(
+            "Adjusted to the assumption that {} is not the answer.",
+            nice_print(*word)
+        );
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -28,7 +47,7 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for Naive {
+impl Guesser for Interactive {
     fn guess(&mut self, history: &[Guess]) -> Word {
         if let Some(last) = history.last() {
             self.remaining.retain(|word, _| last.matches(word));
@@ -44,7 +63,6 @@ impl Guesser for Naive {
         } else {
             // First guess
             self.remaining = self.initial.clone();
-            return to_word("tares");
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
@@ -53,23 +71,33 @@ impl Guesser for Naive {
         for (&word, _) in &self.initial {
             // measure goodness, which is the expected value of the information
             // - SUM_i p_i * log_2(p_i)
+
+            let mut mask_buckets = Array5::<usize>::zeros((3, 3, 3, 3, 3));
+            for (candidate, count) in &self.remaining {
+                let mask = Correctness::compute(candidate, &word);
+                mask_buckets[[
+                    mask[0] as usize,
+                    mask[1] as usize,
+                    mask[2] as usize,
+                    mask[3] as usize,
+                    mask[4] as usize,
+                ]] += count;
+            }
+
             let mut goodness = 0.0;
-            for pattern in Correctness::all_patterns() {
-                let mut in_pattern_total = 0;
-                for (candidate, count) in &self.remaining {
-                    let g = Guess {
-                        word,
-                        mask: pattern,
-                    };
-                    if g.matches(candidate) {
-                        in_pattern_total += count;
-                    }
-                }
+            for mask in Correctness::all_patterns() {
+                let in_pattern_total = mask_buckets[[
+                    mask[0] as usize,
+                    mask[1] as usize,
+                    mask[2] as usize,
+                    mask[3] as usize,
+                    mask[4] as usize,
+                ]];
                 if in_pattern_total == 0 {
                     // avoid indeterminate arithmetic (NaN) which should evaluate to 0
                     continue;
                 }
-                let prob_of_pattern = in_pattern_total as f64 / remaining_count as f64;
+                let prob_of_pattern = (in_pattern_total as f64) / (remaining_count as f64);
                 goodness -= prob_of_pattern * prob_of_pattern.log2();
             }
 
