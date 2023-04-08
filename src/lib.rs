@@ -362,7 +362,7 @@ mod tests {
             );
         }
         #[test]
-        fn dumb_chat() {
+        fn meh_chat() {
             assert_eq!(
                 Correctness::compute(&to_word("abcde"), &to_word("aacde")),
                 mask!(C W C C C)
@@ -437,6 +437,10 @@ mod tests {
             check!("aabba" + [M W W W C] allows "ccaca");
             // The following should really allow.
             check!("aabba" + [W M W W C] disallows "ccaca");
+        }
+        #[test]
+        fn hard() {
+            check!("zimbi" + [W C W W W] allows "hilly");
         }
     }
 }

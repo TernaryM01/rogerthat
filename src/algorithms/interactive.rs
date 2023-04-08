@@ -7,6 +7,7 @@ use ndarray::Array5;
 pub struct Interactive {
     initial: HashMap<Word, usize>,
     remaining: HashMap<Word, usize>,
+    hard: bool,
 }
 
 impl Interactive {
@@ -20,7 +21,11 @@ impl Interactive {
             (word.map(|c| c.to_ascii_char().unwrap()), count)
         }));
         let remaining = initial.clone();
-        Self { initial, remaining }
+        Self {
+            initial,
+            remaining,
+            hard: false,
+        }
     }
 
     pub fn remove(&mut self, word: &Word) {
@@ -38,6 +43,16 @@ impl Interactive {
             "Adjusted to the assumption that {} is not the answer.",
             nice_print(*word)
         );
+    }
+
+    pub fn remaining(&self) {
+        for (&word, _) in &self.remaining {
+            print!("{} ", nice_print(word));
+        }
+    }
+
+    pub fn hard(&mut self) {
+        self.hard = true;
     }
 }
 
@@ -63,6 +78,10 @@ impl Guesser for Interactive {
         } else {
             // First guess
             self.remaining = self.initial.clone();
+        }
+
+        if self.hard {
+            self.initial = self.remaining.clone();
         }
 
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();

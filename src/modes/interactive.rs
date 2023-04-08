@@ -10,6 +10,8 @@ pub enum CmdToken {
     Unrecognized,
     Remove,
     Eliminate,
+    Remaining,
+    Hard,
     Word(Word),
     Mask([Correctness; 5]),
 }
@@ -19,6 +21,10 @@ pub fn parse_cmd(cmd: &str) -> CmdToken {
         CmdToken::Remove
     } else if cmd == "ELIMINATE" {
         CmdToken::Eliminate
+    } else if cmd == "REMAINING" {
+        CmdToken::Remaining
+    } else if cmd == "HARD" {
+        CmdToken::Hard
     } else if cmd.len() == 5 {
         let identifier = cmd.chars().next().unwrap();
         if identifier == '-' || identifier == '#' || identifier == '+' {
@@ -66,7 +72,11 @@ pub fn interactive() {
     println!("If the suggestion is not allowed, type 'REMOVE'.");
     println!("You can also manually remove any word by typing 'REMOVE' + space + word.");
     println!("If a word is allowed but you don't think it's the answer, use 'ELIMINATE' instead of 'REMOVE'.");
+    println!("To allow a word without considering it as possibly the answer (the opposite of and undoes 'REMOVE'), use 'ALLOW'.");
+    println!("To allow a word and consider it as possibly the answer (the opposite of and undoes 'ELIMINATE'), use 'CONSIDER'.");
     println!("If you follow the suggestion, you can just type the pattern, omitting the word (and the space).");
+    println!("To list all remaining possible words, type 'REMAINING'.");
+    println!("To enter hard mode, type 'HARD'.");
 
     let mut guesser = crate::algorithms::Interactive::new();
     let mut history = Vec::<Guess>::new();
@@ -107,6 +117,15 @@ pub fn interactive() {
                         guesser.eliminate(&guess);
                         continue;
                     }
+                }
+                CmdToken::Remaining => {
+                    guesser.remaining();
+                    continue;
+                }
+                CmdToken::Hard => {
+                    guesser.hard();
+                    println!("Hard mode activated.");
+                    continue;
                 }
                 CmdToken::Mask(mask) => {
                     history.push(Guess { word: guess, mask });
