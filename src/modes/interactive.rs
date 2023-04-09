@@ -10,6 +10,8 @@ pub enum CmdToken {
     Unrecognized,
     Remove,
     Eliminate,
+    Add,
+    Consider,
     Remaining,
     Hard,
     Word(Word),
@@ -21,6 +23,10 @@ pub fn parse_cmd(cmd: &str) -> CmdToken {
         CmdToken::Remove
     } else if cmd == "ELIMINATE" {
         CmdToken::Eliminate
+    } else if cmd == "ADD" {
+        CmdToken::Add
+    } else if cmd == "CONSIDER" {
+        CmdToken::Consider
     } else if cmd == "REMAINING" {
         CmdToken::Remaining
     } else if cmd == "HARD" {
@@ -118,6 +124,22 @@ pub fn interactive() {
                         continue;
                     }
                 }
+                CmdToken::Add => {
+                    if let Some(arg2) = arg2 {
+                        if let CmdToken::Word(word) = parse_cmd(arg2) {
+                            guesser.add(&word);
+                            continue;
+                        }
+                    }
+                }
+                CmdToken::Consider => {
+                    if let Some(arg2) = arg2 {
+                        if let CmdToken::Word(word) = parse_cmd(arg2) {
+                            guesser.consider(&word);
+                            continue;
+                        }
+                    }
+                }
                 CmdToken::Remaining => {
                     guesser.remaining();
                     continue;
@@ -139,7 +161,7 @@ pub fn interactive() {
                         }
                     }
                 }
-                _ => {}
+                CmdToken::Unrecognized => {}
             }
         }
         error_unrecognized();

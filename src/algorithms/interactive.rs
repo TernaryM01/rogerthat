@@ -1,4 +1,4 @@
-use crate::{nice_print, Correctness, Guess, Guesser, Word, DICTIONARY};
+use crate::{nice_print, to_word, Correctness, Guess, Guesser, Word, DICTIONARY};
 use ascii::ToAsciiChar;
 use std::collections::HashMap;
 
@@ -8,6 +8,7 @@ pub struct Interactive {
     initial: HashMap<Word, usize>,
     remaining: HashMap<Word, usize>,
     hard: bool,
+    use_memo: bool,
 }
 
 impl Interactive {
@@ -25,12 +26,14 @@ impl Interactive {
             initial,
             remaining,
             hard: false,
+            use_memo: true,
         }
     }
 
     pub fn remove(&mut self, word: &Word) {
         self.initial.remove(word);
         self.remaining.remove(word);
+        self.use_memo = false;
         println!(
             "Adjusted to the fact that {} is not allowed.",
             nice_print(*word)
@@ -39,8 +42,37 @@ impl Interactive {
 
     pub fn eliminate(&mut self, word: &Word) {
         self.remaining.remove(word);
+        self.use_memo = false;
         println!(
             "Adjusted to the assumption that {} is not the answer.",
+            nice_print(*word)
+        );
+    }
+
+    pub fn add(&mut self, word: &Word) {
+        if !self.initial.contains_key(word) {
+            self.initial.insert(*word, 1);
+            self.use_memo = false;
+        }
+        println!(
+            "Adjusted to the fact that {} is allowed.",
+            nice_print(*word)
+        );
+    }
+
+    pub fn consider(&mut self, word: &Word) {
+        if let Some(goodness) = self.initial.get(word) {
+            if !self.remaining.contains_key(word) {
+                self.remaining.insert(*word, *goodness);
+                self.use_memo = false;
+            }
+        } else {
+            self.initial.insert(*word, 1);
+            self.remaining.insert(*word, 1);
+            self.use_memo = false;
+        }
+        println!(
+            "Adjusted to the assumption that {} might be the answer.",
             nice_print(*word)
         );
     }
@@ -78,6 +110,9 @@ impl Guesser for Interactive {
         } else {
             // First guess
             self.remaining = self.initial.clone();
+            if self.use_memo {
+                return to_word("tares");
+            }
         }
 
         if self.hard {
