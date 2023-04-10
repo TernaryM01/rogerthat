@@ -10,7 +10,7 @@ pub enum CmdToken {
     Unrecognized,
     Remove,
     Eliminate,
-    Add,
+    Allow,
     Consider,
     Remaining,
     Hard,
@@ -23,8 +23,8 @@ pub fn parse_cmd(cmd: &str) -> CmdToken {
         CmdToken::Remove
     } else if cmd == "ELIMINATE" {
         CmdToken::Eliminate
-    } else if cmd == "ADD" {
-        CmdToken::Add
+    } else if cmd == "ALLOW" {
+        CmdToken::Allow
     } else if cmd == "CONSIDER" {
         CmdToken::Consider
     } else if cmd == "REMAINING" {
@@ -124,7 +124,7 @@ pub fn interactive() {
                         continue;
                     }
                 }
-                CmdToken::Add => {
+                CmdToken::Allow => {
                     if let Some(arg2) = arg2 {
                         if let CmdToken::Word(word) = parse_cmd(arg2) {
                             guesser.add(&word);

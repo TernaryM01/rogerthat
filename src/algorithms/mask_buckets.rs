@@ -91,18 +91,20 @@ impl Guesser for MaskBuckets {
             }
 
             if let Some(c) = best {
+                use crate::EPSILON;
+
                 // Is this one better?
-                if goodness > c.goodness {
+                if goodness > c.goodness + EPSILON {
                     best = Some(Candidate { word, goodness })
 
                 // Tie is pretty common when there are few words left.
                 // Make sure to handle this situation well.
-                } else if goodness == c.goodness {
+                } else if !(c.goodness > goodness + EPSILON) {
                     // disfavor a word that has been ruled out
                     // if neither word has been ruled out, favor the more common one
                     if !self.remaining.contains_key(&c.word)
-                        || (self.remaining.contains_key(&word))
-                            && (dict.get(&word) > dict.get(&c.word))
+                        || ((self.remaining.contains_key(&word))
+                            && (dict.get(&word) > dict.get(&c.word)))
                     {
                         best = Some(Candidate { word, goodness });
                     }

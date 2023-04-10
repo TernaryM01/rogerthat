@@ -29,6 +29,8 @@ const DICTIONARY: &str = include_str!("../dictionary.txt");
 pub const GAMES: &str = include_str!("../answers.txt");
 const MAX_GUESSES: usize = 100;
 
+pub const EPSILON: f64 = 0.0000000000001;
+
 pub struct Wordle {
     dictionary: HashSet<Word>,
 }
